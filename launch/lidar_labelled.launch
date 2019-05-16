@@ -1,0 +1,5 @@
+<launch>
+
+  <node pkg="mpc_test" name="lidar_points_labelled" type="LidarPointsLabelled.py"/>
+
+</launch>
