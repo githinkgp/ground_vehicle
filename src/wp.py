@@ -5,8 +5,8 @@ import sys
 from geometry_msgs.msg import Vector3
 
 def talker(argv):
-    wp_pub = rospy.Publisher('/mybot/set_goal', Vector3, queue_size=10)
-    rospy.init_node('mybot_goal', anonymous=True)
+    wp_pub = rospy.Publisher('/GV/set_goal', Vector3, queue_size=10)
+    rospy.init_node('GV_goal', anonymous=True)
     rate = rospy.Rate(10) # 10hz
     print argv
     wp_msg = Vector3()

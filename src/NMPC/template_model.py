@@ -103,7 +103,7 @@ def model(waypoint, obstacles,pose,twist,wt):
     --------------------------------------------------------------------------
     """
     # Initial condition for the states
-    print "pose",pose
+    #print "pose",pose
     x_0 = pose[0] # This is the initial concentration inside the tank [mol/l]
     y_0 = pose[1] # This is the controlled variable [mol/l]
     theta_0 = pose[2] #[C]
@@ -111,15 +111,15 @@ def model(waypoint, obstacles,pose,twist,wt):
     x0 = NP.array([x_0, y_0, theta_0])
 
     # Bounds on the states. Use "inf" for unconstrained states
-    x_lb = -100;			x_ub = 100.0
-    y_lb = -100;			y_ub = 100.0
+    x_lb = -10;			x_ub = 10.0
+    y_lb = -10;			y_ub = 10.0
     theta_lb = -3.14;			theta_ub = 3.14
     #T_K_lb = 50.0;			T_K_ub = 180
     X_lb = NP.array([x_lb, y_lb, theta_lb])
     X_ub = NP.array([x_ub, y_ub, theta_ub])
 
     # Bounds on the control inputs. Use "inf" for unconstrained inputs
-    u_lb = 0.0;                 u_ub = 1.0;
+    u_lb = 0.4;                 u_ub = 0.7;
     w_lb = -1.0;         w_ub = 1.0;
     U_lb = NP.array([u_lb, w_lb])
     U_ub = NP.array([u_ub, w_ub])
@@ -175,7 +175,7 @@ def model(waypoint, obstacles,pose,twist,wt):
                 R = [[cos(theta_0), -sin(theta_0)],[sin(theta_0),cos(theta_0)]]
 
                 xo = np.matmul(R,xo) + pose[0:2]
-                print "obs position",xo
+                #print "obs position",xo
                 V = V + (lam)/((gamma+(( (xo[0]-x)*cos(phi) + (xo[1]-y)*sin(phi) )**2)/(rx**2) + (( (xo[0]-x)*sin(phi) - (xo[1]-y)*cos(phi) )**2)/(ry**2) ))
 
 

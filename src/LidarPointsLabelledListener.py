@@ -34,7 +34,7 @@ class LidarPointsLabelledListener:
             degree = msg.range_data[i].angle
             label = msg.range_data[i].label
 
-            if distance <= 5 and fabs(degree)<=90: #data points within 5m
+            if distance <= 3 and fabs(degree)<=90: #data points within 5m
                 if label == -1:
                     self.PersonData.append((degree,distance)) #points corresponding to a person
                 elif label == 1:

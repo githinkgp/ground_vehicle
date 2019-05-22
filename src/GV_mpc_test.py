@@ -2,6 +2,9 @@
 from LidarPointsListener import *
 from LidarPointsLabelledListener import *
 from HumanStateListener import *
+from EncoderIMUListener import *
+from actuator_control import *
+
 import numpy as np
 from math import *
 import time
@@ -10,6 +13,7 @@ import time
 import rospy
 import matplotlib.pyplot as plt
 import matplotlib.markers as marker
+
 from std_msgs.msg import Int32
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import Vector3
@@ -20,10 +24,14 @@ import matplotlib.patches as patches
 import sys
 sys.path.insert(0,'code')
 sys.path.insert(0,'NMPC')
+from dist import dist
+from dompc import *
 
+doPlot = False
 
-fig=plt.figure()
-ax=plt.axes()
+if doPlot:
+    fig=plt.figure()
+    ax=plt.axes()
 
 class clusters:
     def __init__(self,rangeData):
@@ -181,8 +189,8 @@ class EnclosingEllipse:
                     ax.scatter(XY[:,0],XY[:,1])
 
                     """
-
-                ax.plot(icluster[hull.vertices,1], icluster[hull.vertices,0], 'r--', lw=2)
+                if doPlot:
+                    ax.plot(icluster[hull.vertices,1], icluster[hull.vertices,0], 'r--', lw=2)
                 cent_temp=np.ones((len(CvxHull),2),dtype=np.float)
                 cent_temp[:,0] =self.centroid[i][0]*cent_temp[:,0]
                 cent_temp[:,1] =self.centroid[i][1]*cent_temp[:,1]
@@ -206,39 +214,68 @@ class EnclosingEllipse:
                 if self.b[i] <0.1:
                     self.b[i] =0.1
 
+class Waypoint:
+    def __init__(self):
+        self.waypoint = [0,0,0]
+        self.subWaypoint = rospy.Subscriber('/GV/set_goal',Vector3,self.callback)
+
+    def callback(self,msg):
+        self.waypoint = [msg.x, msg.y, msg.z]
+
 def mpc_main():
 	RosNodeName = 'GV_lidar_test'
 	rospy.init_node(RosNodeName,anonymous=True)
         lidarPointsLabelled_listener = LidarPointsLabelledListener()
         lidarPoints_listener = LidarPointsListener()
         humanState_listener = HumanStateListener()
+        encoderIMU_listener = EncoderIMUListener()
 
         rate_init = rospy.Rate(10.0)
         rate_init.sleep()
 
+        WP = Waypoint()
+
+        MPC=doMPC()
+
         while not rospy.is_shutdown():
             start = time.time()
+            waypoint = WP.waypoint
             rangeData = lidarPoints_listener.RangeData
             staticData = lidarPointsLabelled_listener.StaticData
             personData = lidarPointsLabelled_listener.PersonData
 
-            human_state = humanState_listener.State
-            if len(human_state):
+            robot_state = encoderIMU_listener.State # wrt to global origin
+            robot_twist = encoderIMU_listener.Twist # wrt to global frame
+            print "robot state", robot_state, "twist", robot_twist
+            human_state = humanState_listener.State # wrt to GV body frame
+            #if len(human_state):
                 #print "human state", human_state[0]
-                ax.plot(human_state[0][1], human_state[0][0],color='blue',marker='D')
+                #if doPlot:
+                    #ax.plot(human_state[0][1], human_state[0][0],color='blue',marker='D')
 
 
             Cluster = clusters(rangeData)
             #staticCluster = clusters(staticData)
             #personCluster = clusters(personData)
 
-            ax.scatter(Cluster.clusterXY[:,1], Cluster.clusterXY[:,0], color='black')
-            #ax.scatter(staticCluster.clusterXY[:,1], staticCluster.clusterXY[:,0], color='black')
-            #ax.scatter(personCluster.clusterXY[:,1], personCluster.clusterXY[:,0], color='green')
+            if doPlot:
+                ax.scatter(Cluster.clusterXY[:,1], Cluster.clusterXY[:,0], color='black')
+                #ax.scatter(staticCluster.clusterXY[:,1], staticCluster.clusterXY[:,0], color='black')
+                #ax.scatter(personCluster.clusterXY[:,1], personCluster.clusterXY[:,0], color='green')
 
 
             elliHull = EnclosingEllipse(Cluster)
             #elliHull = EnclosingEllipse(staticCluster)
+
+            if dist(robot_state[0:2], waypoint)>0.2:
+                #U = [0.5,0.2]
+                U = MPC.getOptControl(waypoint,elliHull,robot_state,robot_twist)
+                #print "control", U
+                actuator_control(U)
+            else:
+                actuator_control([0,0])
+                #print "control", 0,0
+
 
             count = len(Cluster.clusterIdx)
             #count = len(staticCluster.clusterIdx)
@@ -251,19 +288,22 @@ def mpc_main():
                         elliHull.m[i] = 0.001
                     else:
                         elliHull.m[i] = -0.001
-                elli=patches.Ellipse(xy=centroid,width=2*elliHull.a[i], height=2*elliHull.b[i], angle=degrees(atan(1/(elliHull.m[i]))), fc='None')
-                ax.add_artist(elli)
+                if doPlot:
+                    elli=patches.Ellipse(xy=centroid,width=2*elliHull.a[i], height=2*elliHull.b[i], angle=degrees(atan(1/(elliHull.m[i]))), fc='None')
+                    ax.add_artist(elli)
+
+            if doPlot:
+                ax.grid()
+                ax.axis([-5,5,0,5])
+                ax.set_title('Obstacle position w.r.t to robot')
+                plt.pause(0.05)
+
+                plt.draw()
+
+                ax.cla()
             end = time.time()
 
-            #print "computation time:", end - start
-            ax.grid()
-            ax.axis([-10,10,-10,10])
-            ax.set_title('Obstacle position w.r.t to robot')
-            plt.pause(0.05)
-
-            #plt.draw()
-
-            ax.cla()
+            print "computation time:", end - start
 
 #############################################################################################################################
 # running

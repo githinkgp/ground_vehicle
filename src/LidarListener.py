@@ -39,7 +39,7 @@ class LidarListener:
             intensity = msg.intensities[i]
             # if there is valid beam reflection
             #if 1.0 < intensity < np.inf:
-            if distance < 5:
+            if distance <= 3:
                 self.RangeData.append((-degree,distance))   # mirror reflection of the angle degree
     
     # end callback

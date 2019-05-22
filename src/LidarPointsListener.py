@@ -29,9 +29,10 @@ class LidarPointsListener:
         count = len(msg.range_data)
         for i in xrange(count):
             distance = msg.range_data[i].distance
-            degree = msg.range_data[i].angle
-            label = msg.range_data[i].label
-            self.RangeData.append((degree,distance,label))
+            if distance <=3:
+                degree = msg.range_data[i].angle
+                label = msg.range_data[i].label
+                self.RangeData.append((degree,distance,label))
     
     # end callback
 

@@ -43,6 +43,7 @@ from dist import dist
 import math
 import matplotlib.patches as patches
 import numpy as np
+import time
 """
 -----------------------------------------------
 do-mpc: Definition of the do-mpc configuration
@@ -61,7 +62,7 @@ class doMPC:
 
     def getOptControl(self,waypoint,obstacles,pose,twist):
         #weights
-        w = [60,60,1,5e4]
+        w = [80,80,1,5e3]
         # Create the objects for each module
         model_1 = template_model.model(waypoint,obstacles,pose,twist,w)
         # Create an optimizer object based on the template and a model
@@ -85,8 +86,9 @@ class doMPC:
         Y_ref=waypoint
         lam=w[3]
         gamma=1
-        print "obstacles", len(obstacles.a)
+        #print "obstacles", len(obstacles.a)
         #V=lam/((gamma+((xo[0]-x[0])**2)/(rx**2)+((xo[1]-x[1])**2)/(ry**2)))
+        print "no. of obstacles", len(obstacles.a)
         if len(obstacles.a):
             V = 0 
             for i in xrange(len(obstacles.a)):
@@ -104,7 +106,7 @@ class doMPC:
                     V = V + (lam)/((gamma+(( (xo[0]-x[0])*cos(phi) + (xo[1]-x[1])*sin(phi) )**2)/(rx**2) + (( (xo[1]-x[0])*sin(phi) - (xo[1]-x[1])*cos(phi) )**2)/(ry**2) ))
 
                     
-                    print "cost",i, V
+                    #print "cost",i, V
 
             print "total cost", V
 
@@ -119,7 +121,10 @@ class doMPC:
         ----------------------------
         """
         # Make one optimizer step (solve the NLP)
+        start = time.time()
         configuration_1.make_step_optimizer()
+        end = time.time()
+        print "optimization time:",end-start
         print "u_mpc: ", configuration_1.optimizer.u_mpc
 
         #x=move(configuration_1.simulator.x0_sim,configuration_1.optimizer.u_mpc,1)
