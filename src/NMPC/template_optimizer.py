@@ -34,7 +34,7 @@ def optimizer(model):
     """
 
     # Prediction horizon
-    n_horizon = 20
+    n_horizon = 10
     # Robust horizon, set to 0 for standard NMPC
     n_robust = 0
     # open_loop robust NMPC (1) or multi-stage NMPC (0). Only important if n_robust > 0

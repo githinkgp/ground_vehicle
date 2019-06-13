@@ -1,0 +1,52 @@
+<launch>
+
+  <!-- include file="$(find astra_launch)/launch/astra.launch"/ -->
+
+  <!-- include file="$(find dnn_detect)/launch/dnn_detect_no_screen.launch" -->
+    <!-- arg name="camera" value="/camera/rgb"/ -->
+    <!-- arg name="image" value="/image_raw"/ -->
+  <!-- /include -->
+
+  <include file="$(find rplidar_ros)/launch/rplidar_a3.launch" />
+
+  <node pkg="camera_lidar_fusion" name="camera_lidar_fusion" type="fusion_main_lidar_output.py">
+  </node>
+
+  <node pkg="target_tracker" name="target_tracker" type="target_tracker_main.py" output="screen">
+  </node>
+
+  <node pkg="mpc_test" name="lidar_points_labelled" type="LidarPointsLabelled.py"/>
+
+  <node pkg="tf" type="static_transform_publisher" name="laser_camera" args="0 0 0.075 3.14 0 0 laser camera_link 100" />
+
+  <node pkg="tf" type="static_transform_publisher" name="base_link_to_laser" args="0.18 0 0.1 3.14 0 0 base_link laser 100" />
+
+  <arg name="IS_TWISTSTAMPED" default="true" />
+  <arg name="publish_covariance" default="false"/>
+  #### set up data playback from bag #############################
+  <param name="/stamped_vel" value="$(arg IS_TWISTSTAMPED)"/>
+
+  #### publish an example base_link -> laser transform ###########
+
+  <!-- node pkg="tf" type="static_transform_publisher" name="base_link_to_laser" args="0.0 0.0 0.0 0.0 0.0 0.0 base_link laser 100" /-->
+
+  #### start the laser scan_matcher ##############################
+
+  <group if="$(arg publish_covariance)">
+    <param name="laser_scan_matcher_node/do_compute_covariance" value="1"/>
+    <param name="laser_scan_matcher_node/publish_pose_with_covariance" value="true"/>
+    <param name="laser_scan_matcher_node/publish_pose_with_covariance_stamped" value="true"/>
+  </group>
+  <node pkg="laser_scan_matcher" type="laser_scan_matcher_node"
+    name="laser_scan_matcher_node" output="screen">
+
+    <param name="max_iterations" value="10"/>
+  </node>
+
+
+  <include file="$(find mavros)/launch/px4.launch">
+    <arg name="fcu_url" value="/dev/ttyUSB0:57600" />
+  </include>
+  <node pkg="rosserial_python" name="serial_node" type="serial_node.py" args="/dev/ttyACM0"/>
+
+</launch>

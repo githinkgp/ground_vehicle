@@ -26,13 +26,13 @@ class EncoderIMUListener:
     def callback(self,msg):
         self.State = [msg.xcoordinate_center_filtered, msg.ycoordinate_center_filtered,msg.heading]
         v= sqrt(msg.Vx_center_filtered**2 + msg.Vy_center_filtered**2)
-        self.Twist = [v,0.0]
-        br = tf.TransformBroadcaster()
-        br.sendTransform((msg.xcoordinate_center_filtered, msg.ycoordinate_center_filtered, 0),
-                        tf.transformations.quaternion_from_euler(0, 0, msg.heading),
-                        rospy.Time.now(),
-                        "chassis",
-                        "map")
+        self.Twist = [v,-msg.angular_velocity]
+        #br = tf.TransformBroadcaster()
+        #br.sendTransform((msg.xcoordinate_center_filtered, msg.ycoordinate_center_filtered, 0),
+        #                tf.transformations.quaternion_from_euler(0, 0, -msg.heading),
+        #                rospy.Time.now(),
+        #                "chassis",
+        #                "map")
     
     # end callback
 

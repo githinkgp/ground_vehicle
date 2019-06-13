@@ -88,7 +88,7 @@ class doMPC:
         gamma=1
         #print "obstacles", len(obstacles.a)
         #V=lam/((gamma+((xo[0]-x[0])**2)/(rx**2)+((xo[1]-x[1])**2)/(ry**2)))
-        print "no. of obstacles", len(obstacles.a)
+        #print "no. of obstacles", len(obstacles.a)
         if len(obstacles.a):
             V = 0 
             for i in xrange(len(obstacles.a)):
@@ -124,7 +124,7 @@ class doMPC:
         start = time.time()
         configuration_1.make_step_optimizer()
         end = time.time()
-        print "optimization time:",end-start
+        #print "optimization time:",end-start
         print "u_mpc: ", configuration_1.optimizer.u_mpc
 
         #x=move(configuration_1.simulator.x0_sim,configuration_1.optimizer.u_mpc,1)

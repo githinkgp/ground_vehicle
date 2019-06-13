@@ -216,7 +216,7 @@ class EnclosingEllipse:
                     self.a[i] =0.1
                 if self.b[i] <0.1:
                     self.b[i] =0.1
-
+"""
 class Waypoint:
     def __init__(self):
         self.waypoint = [0,0,0]
@@ -224,10 +224,19 @@ class Waypoint:
 
     def callback(self,msg):
         self.waypoint = [msg.x, msg.y, msg.z]
+"""
+class ControlInputs:
+    def __init__(self):
+        self.U = [0.0,0.0]
+        self.subControlInputs = rospy.Subscriber('/cmd_vel',Twist,self.callback)
 
-def mpc_main():
-	RosNodeName = 'GV_lidar_test'
+    def callback(self,msg):
+        self.U = [msg.linear.x, msg.angular.z]
+
+def teb_main():
+        RosNodeName = 'GV_TEB_test'
 	rospy.init_node(RosNodeName,anonymous=True)
+        """
         lidarPointsLabelled_listener = LidarPointsLabelledListener()
         lidarPoints_listener = LidarPointsListener()
         humanState_listener = HumanStateListener()
@@ -240,9 +249,44 @@ def mpc_main():
         WP = Waypoint()
 
         MPC=doMPC()
-
+        """
+        controlInput_listener = ControlInputs()
+        max_throttle = 0.5
+        min_throttle = 0.4
+        dir=0
         while not rospy.is_shutdown():
             start = time.time()
+            U = controlInput_listener.U
+            print U
+            if abs(U[0]) > 0.1:
+                throttle = (U[0]/abs(U[0]))*(abs(U[0])*(max_throttle - min_throttle)/0.4 + min_throttle)
+            else:
+                throttle = 0.0
+            if U[1] <0:
+                steer = -U[1]*1.2/0.245
+            else:
+                steer = (-U[1]+0.245)*0.8/0.245 - 0.8
+            #print throttle, steer
+            if dir>=0 and throttle<0.0:
+                for i in xrange(4):
+                    t=0.0
+                    if dir==0 and i==0:
+                        continue
+                    if i%2:
+                        t=throttle
+                    else:
+                        t=0.0
+                    print "change dir"
+                    actuator_control([t,steer])
+                dir = -1
+            elif throttle == 0.0:
+                dir = 0
+            elif throttle>0.0:
+                dir = 1
+
+            actuator_control([throttle,steer])
+
+            """
             waypoint = WP.waypoint
             if doGoalOnly == False:
                 rangeData = lidarPoints_listener.RangeData
@@ -309,6 +353,8 @@ def mpc_main():
                 #plt.draw()
 
                 ax.cla()
+                """
+
             end = time.time()
 
             #print "computation time:", end - start
@@ -317,6 +363,7 @@ def mpc_main():
 # running
 if __name__ == '__main__':
     try:
-        mpc_main()
+        teb_main()
     except rospy.ROSInterruptException:
         pass
+
