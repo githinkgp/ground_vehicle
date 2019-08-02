@@ -1,22 +1,7 @@
 <launch>
-  <include file="$(find astra_launch)/launch/astra.launch"/>
-
-  <include file="$(find dnn_detect)/launch/dnn_detect_no_screen.launch">
-    <arg name="camera" value="/camera/rgb"/>
-    <arg name="image" value="/image_raw"/>
-    <param name="class_names" value="person"/>
-  </include>
 
   <include file="$(find rplidar_ros)/launch/rplidar_a3.launch" />
   <node pkg="mpc_test" name="half_scan" type="half_scan.py"/>
-  
-  <node pkg="camera_lidar_fusion" name="camera_lidar_fusion" type="fusion_main_lidar_output.py">
-  </node>
-
-  <node pkg="target_tracker" name="target_tracker" type="target_tracker_main.py" output="screen">
-  </node>
-
-  <node pkg="mpc_test" name="lidar_points_labelled" type="LidarPointsLabelled.py"/>
 
   <node pkg="tf" type="static_transform_publisher" name="base_link_to_laser" args="0.18 0 0.1 3.14 0 0 base_link laser 100" />
 
@@ -85,9 +70,10 @@
     <rosparam file="$(find mpc_test)/params/costmap_common_params.yaml" command="load" ns="local_costmap" />
     <rosparam file="$(find mpc_test)/params/local_costmap_params.yaml" command="load" />
     <rosparam file="$(find mpc_test)/params/global_costmap_params.yaml" command="load" /> 
-    <rosparam file="$(find mpc_test)/params/base_local_planner_params_TEB.yaml" command="load" />
-
-    <param name="base_local_planner" value="teb_local_planner/TebLocalPlannerROS" />
+    <rosparam file="$(find mpc_test)/params/base_local_planner_params_DWA.yaml" command="load" />
+    
+    <param name="base_local_planner" value="dwa_local_planner/DWALocalPlannerROS" />
     <param name="controller_frequency" value="5.0" />
+    
  </node>
 </launch>

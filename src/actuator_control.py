@@ -5,7 +5,7 @@ def actuator_control(U):
     actuator_publisher = rospy.Publisher('/mavros/actuator_control', ActuatorControl, queue_size=10)
     act_msg = ActuatorControl()
 
-    rate = rospy.Rate(10) # 10hz
+    rate = rospy.Rate(100) # 10hz
 
     act_msg.controls[0] = 0.0
     act_msg.controls[1] = 0.0

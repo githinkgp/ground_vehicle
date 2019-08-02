@@ -119,7 +119,7 @@ def model(waypoint, obstacles,pose,twist,wt):
     X_ub = NP.array([x_ub, y_ub, theta_ub])
 
     # Bounds on the control inputs. Use "inf" for unconstrained inputs
-    u_lb = 0.4;                 u_ub = 0.7;
+    u_lb = -1.0;                 u_ub = 1.0;
     w_lb = -1.0;         w_ub = 1.0;
     U_lb = NP.array([u_lb, w_lb])
     U_ub = NP.array([u_ub, w_ub])

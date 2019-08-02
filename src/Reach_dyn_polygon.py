@@ -259,6 +259,7 @@ def dyn_obs_main():
 
             #robot_state = encoderIMU_listener.State # wrt to global origin
             robot_state = icp_listener.State # wrt to global origin
+            #print "robot state", robot_state
             #robot_twist = encoderIMU_listener.Twist # wrt to global frame
 
             human_state = humanState_listener.State # wrt to GV body frame
@@ -269,15 +270,15 @@ def dyn_obs_main():
             obstacle_msg.header.frame_id = "odom"
 
             # Add polygon obstacle
-            obstacle_msg.obstacles.append(ObstacleMsg())
-            obstacle_msg.obstacles[0].id = 2
 
-            obstacle_msg.obstacles[0].polygon.points = []
 
-            if len(human_state):
+            for i in xrange(len(human_state)):
+                obstacle_msg.obstacles.append(ObstacleMsg())
                 #print human_state
-                vx=human_state[0][2]
-                vy=-human_state[0][3]
+                vx=human_state[i][2]
+                vy=human_state[i][3]
+                print "vx", vx
+                print "vy", vy
                 if fabs(vx)<=0.1 and fabs(vy)<=0.1:
                     vx=0.0
                     vy=0.0
@@ -292,17 +293,32 @@ def dyn_obs_main():
                         t=t+pi
                     elif vy<0.0:
                         t=t+2*pi
-                print "obs", human_state[0][0], human_state[0][1]
+                print "obs",i, human_state[i][0], human_state[i][1]
                 #print "angle", t
+                if human_state[i][0] == 0.0 and human_state[i][1] == 0.0:
+                    continue
+
+
+                obstacle_msg.obstacles[i].id = 2
+
+                obstacle_msg.obstacles[i].polygon.points = []
 
                 X,Y = lvls.CalculateLevelSet(t)
                 l = len(X)
                 X=np.zeros((1,l),dtype=np.float)+X
                 Y=np.zeros((1,l),dtype=np.float)+Y
+
+                #X=np.array([[-1.0,0.0,1.0,0.0]])
+                #Y=np.array([[0.0,-1.0,0.0,1.0]])
                 X=X/3
                 Y=Y/3
-                x=np.ones((1,l),dtype=np.float) * (robot_state[0]+human_state[0][0])
-                y=np.ones((1,l),dtype=np.float) * (robot_state[1]-human_state[0][1])
+
+                t1=-robot_state[2]
+                R1 = [[cos(t1), -sin(t1)],[sin(t1),cos(t1)]]
+                hs=np.matmul(R1,[[human_state[i][0]],[human_state[i][1]]])
+                #print hs
+                x=np.ones((1,l),dtype=np.float) * (robot_state[0]+hs[0])
+                y=np.ones((1,l),dtype=np.float) * (robot_state[1]+hs[1])
 
                 xy = np.concatenate((x,y),axis=0)
 
@@ -312,7 +328,8 @@ def dyn_obs_main():
 
                 XY = XY + xy
                 XY = np.transpose(XY)
-
+                #print "xy", xy
+                #print "XY", XY
                 Obshull = ConvexHull(XY)
                 ObsCvxHull =XY[Obshull.vertices,:]
                 len_poly = len(ObsCvxHull)
@@ -320,14 +337,15 @@ def dyn_obs_main():
                 #v=Point32()
 
 
-                for i in xrange(len_poly):
-                    obstacle_msg.obstacles[0].polygon.points.append(Point32())
-                    obstacle_msg.obstacles[0].polygon.points[i].x = ObsCvxHull[i][0]
-                    obstacle_msg.obstacles[0].polygon.points[i].y = ObsCvxHull[i][1]
+                for j in xrange(len_poly):
+                    obstacle_msg.obstacles[i].polygon.points.append(Point32())
+                    obstacle_msg.obstacles[i].polygon.points[j].x = ObsCvxHull[j][0]
+                    obstacle_msg.obstacles[i].polygon.points[j].y = ObsCvxHull[j][1]
 
 
                 #print obstacle_msg.obstacles[0].polygon.points
-                pub.publish(obstacle_msg)
+            pub.publish(obstacle_msg)
+
 
 
             #else:

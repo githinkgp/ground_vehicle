@@ -22,7 +22,7 @@ class ICPListener:
     # callback to EncoderIMU state estimator
     def callback(self,msg):
         #changing the sign of the state to conform with NED
-        self.State = [msg.x, -msg.y,-msg.theta]
+        self.State = [msg.x, msg.y,-msg.theta]
     # end callback
 
 # end class def

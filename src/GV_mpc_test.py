@@ -219,7 +219,7 @@ class EnclosingEllipse:
 
 class Waypoint:
     def __init__(self):
-        self.waypoint = [0,0,0]
+        self.waypoint = [0.0,0.0,0.0]
         self.subWaypoint = rospy.Subscriber('/GV/set_goal',Vector3,self.callback)
 
     def callback(self,msg):
@@ -230,7 +230,7 @@ def mpc_main():
 	rospy.init_node(RosNodeName,anonymous=True)
         lidarPointsLabelled_listener = LidarPointsLabelledListener()
         lidarPoints_listener = LidarPointsListener()
-        humanState_listener = HumanStateListener()
+        #humanState_listener = HumanStateListener()
         encoderIMU_listener = EncoderIMUListener()
         icp_listener = ICPListener()
 
@@ -253,9 +253,10 @@ def mpc_main():
 
             #robot_state = encoderIMU_listener.State # wrt to global origin
             robot_state = icp_listener.State # wrt to global origin
+            robot_state = [robot_state[0], robot_state[1], -robot_state[2]]
             robot_twist = encoderIMU_listener.Twist # wrt to global frame
             #print "robot state", robot_state, "twist", robot_twist
-            human_state = humanState_listener.State # wrt to GV body frame
+            #human_state = humanState_listener.State # wrt to GV body frame
             #if len(human_state):
                 #print "human state", human_state[0]
                 #if doPlot:
@@ -274,12 +275,40 @@ def mpc_main():
 
             elliHull = EnclosingEllipse(Cluster)
             #elliHull = EnclosingEllipse(staticCluster)
-
+            max_throttle = 0.45
+            min_throttle = 0.4
+            dir=0.0
             if dist(robot_state[0:2], waypoint)>1.0:
                 #U = [0.5,0.2]
                 U = MPC.getOptControl(waypoint,elliHull,robot_state,robot_twist)
+                if abs(U[0]) > 0.1:
+                    throttle = (U[0]/abs(U[0]))*(abs(U[0])*(max_throttle - min_throttle)/0.4 + min_throttle)
+                else:
+                    throttle = 0.0
+                if U[1]<0:
+                    steer = -U[1]*1.2
+                else:
+                    steer = -U[1]*0.8
                 #print "control", U
-                actuator_control([0.5,U[1]])
+                if dir>=0 and throttle<0.0:
+                    for i in xrange(4):
+                        t=0.0
+                        if dir==0 and i==0:
+                            continue
+                        if i%2:
+                            t=throttle
+                        else:
+                            t=0.0
+                        print "change dir"
+                        actuator_control([t,steer])
+                    dir = -1
+                elif throttle == 0.0:
+                    dir = 0
+                elif throttle>0.0:
+                    dir = 1
+                actuator_control([throttle,steer])
+                print "throttle", throttle, "steer", steer
+
             else:
                 actuator_control([0,0])
                 #print "control", 0,0
@@ -311,7 +340,7 @@ def mpc_main():
                 ax.cla()
             end = time.time()
 
-            #print "computation time:", end - start
+            print "computation time:", end - start
 
 #############################################################################################################################
 # running
